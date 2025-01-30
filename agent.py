@@ -3,7 +3,7 @@ from dotenv import load_dotenv
 from typing import Annotated, Literal
 from typing_extensions import TypedDict
 from langgraph.prebuilt import ToolNode
-from langchain_core.messages import HumanMessage    
+from langchain_core.messages import HumanMessage   
 from langgraph.graph import StateGraph, MessagesState, START, END
 from langgraph.checkpoint.memory import MemorySaver
 from langchain_openai import ChatOpenAI
@@ -11,7 +11,7 @@ from tools import get_job, get_resume
 
 load_dotenv()
 tools = [get_job, get_resume]
-llm = ChatOpenAI(model_name = 'gpt-4o', api_key = os.getenv('OPENAI_API_KEY')).bind_tools(tools)
+llm = ChatOpenAI(model_name = 'gpt-4o', api_key =os.getenv('OPANAI_API_KEY')).bind_tools(tools)
 
 def expert(state: MessagesState):
     system_message = """
@@ -26,7 +26,7 @@ def expert(state: MessagesState):
     return {'messages' : [response]}
 
 tools_node = ToolNode(tools)
-END = 'end'
+
 def should_continue(state: MessagesState) -> Literal['tools', END]:
     messages = state['messages']
     last_message = messages[-1]
@@ -37,7 +37,7 @@ def should_continue(state: MessagesState) -> Literal['tools', END]:
     
 graph = StateGraph(MessagesState)
 
-graph.add_node('exeprt', expert)
+graph.add_node('expert', expert)
 graph.add_node('tools', tools_node)
 
 graph.add_edge(START, 'expert')
@@ -48,7 +48,17 @@ checkpointer= MemorySaver()
 app = graph.compile(checkpointer=checkpointer)
 
 while True:
-   user_input =  
+   user_input = input('>>')
+   if user_input.lower() in ['quit', 'exit']:
+       print('Exiting...')
+       break
+   response = app.invoke(
+       {'messages': [HumanMessage(content=user_input)]},
+       config={'configurable':{'thread_id': 1}}
+   )
+   
+   print(response['messages'][-1].content)
+           
 
 
     
